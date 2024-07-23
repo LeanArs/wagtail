@@ -9,7 +9,7 @@ describe('DropdownController', () => {
   const setup = async (
     html = `
 <section>
-  <div data-controller="w-dropdown" data-w-dropdown-theme-value="dropdown" data-action="custom:show->w-dropdown#show custom:hide->w-dropdown#hide">
+  <div id="dropdown" data-controller="w-dropdown" data-w-dropdown-theme-value="dropdown" data-action="custom:show->w-dropdown#show custom:hide->w-dropdown#hide">
     <button id="toggle" type="button" data-w-dropdown-target="toggle" aria-label="Actions"></button>
     <div data-w-dropdown-target="content">
       <a href="/">Option</a>
@@ -46,6 +46,7 @@ describe('DropdownController', () => {
     document.body.innerHTML = '';
     application?.stop();
   });
+  
 
   it('initialises Tippy.js on connect and shows content in a dropdown', () => {
     const toggle = document.querySelector('[data-w-dropdown-target="toggle"]');
@@ -91,6 +92,80 @@ describe('DropdownController', () => {
       }),
     );
   });
+
+  it("1. should keep the tooltip open if clickaway event is cancelled", async () => {
+    const toggle = document.getElementById('toggle');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    toggle.dispatchEvent(new Event('click'));
+  
+    await jest.runAllTimersAsync();
+  
+    // check the tooltip is open
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  
+    // click event that cancels clickaway
+    document
+      .querySelector('section')
+      .dispatchEvent(new Event('click', {bublles: true, button: 0, cancelable: true}));
+  
+    await jest.runAllTimersAsync();
+  
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it("2. should keep the tooltip hidden when clicking outside the reference element", async () => {
+    const toggle = document.getElementById('toggle');
+  
+    // check the tooltip is close
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  
+    // now click outside the tooltip
+    document
+      .querySelector('section')
+      .dispatchEvent(new Event('click'));
+  
+    await jest.runAllTimersAsync();
+  
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it("3. shouldn't hide the tooltip when clicking outside the reference element", async () => {
+    const toggle = document.getElementById('toggle');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    toggle.dispatchEvent(new Event('click'));
+
+    await jest.runAllTimersAsync();
+
+    // check the tooltip is open
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  
+    // now click outside the tooltip
+    document
+      .querySelector('section')
+      .dispatchEvent(new Event('click'));
+  
+    await jest.runAllTimersAsync();
+  
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it("4. should hide the tooltip when clicking on the toggle button", async () => {
+    const toggle = document.getElementById('toggle');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    toggle.dispatchEvent(new Event('click'));
+
+    await jest.runAllTimersAsync();
+
+    // check the tooltip is open
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    // now click outside the tooltip
+    toggle.dispatchEvent(new Event('click'));
+
+    await jest.runAllTimersAsync();
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+});
 
   it("should ensure the tooltip closes on 'esc' keydown", async () => {
     const toggle = document.getElementById('toggle');
